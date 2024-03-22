@@ -1,16 +1,16 @@
-import spacy
-import re
 import os
+import re
+from typing import Callable
+
 import numpy as np
+import spacy
+from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm import tqdm
 from unidecode import unidecode
-from typing import Callable
-from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 class PreProcessing:
-    """
-    Class for performing text preprocessing operations.
+    """Class for performing text preprocessing operations.
 
     Args:
         noadverbs (bool, optional): Flag to remove adverbs from the text. Defaults to False.
@@ -50,8 +50,7 @@ class PreProcessing:
 
     def __init__(self, noadverbs: bool = False, noadjectives: bool = False, noverbs: bool = False,
                  noentities: bool = False, language: str = 'en', remove_list: bool = False):
-        """
-        Initialize the PreProcessing object.
+        """Initialize the PreProcessing object.
 
         Args:
             noadverbs (bool, optional): Flag to indicate whether to remove adverbs. Defaults to False.
@@ -76,8 +75,7 @@ class PreProcessing:
 
     @staticmethod
     def _load_spacy_model(language: str = 'en'):
-        """
-        Load a Spacy language model based on the specified language.
+        """Load a Spacy language model based on the specified language.
 
         Args:
             language (str): The language code for the model. Defaults to 'en'.
@@ -100,8 +98,7 @@ class PreProcessing:
 
     @staticmethod
     def _process_text(text: str | list, function: Callable) -> str | list:
-        """
-        Process the given text using the provided function.
+        """Process the given text using the provided function.
 
         Args:
             text (str | list): The text to be processed. It can be either a string or a list of strings.
@@ -119,8 +116,7 @@ class PreProcessing:
         return ''
 
     def lowercase_unidecode(self, text: str | list) -> str | list:
-        """
-        Convert the given text to lowercase and remove any diacritical marks (accents).
+        """Convert the given text to lowercase and remove any diacritical marks (accents).
 
         Args:
             text (str | list): The text to be processed. It can be either a string or a list of strings.
@@ -140,8 +136,7 @@ class PreProcessing:
         return text
 
     def remove_urls(self, text: str | list) -> str | list:
-        """
-        Removes URLs from the given text or list of texts.
+        """Removes URLs from the given text or list of texts.
 
         Args:
             text (str | list): The text or list of texts from which to remove URLs.
@@ -153,8 +148,7 @@ class PreProcessing:
         return self._process_text(text, lambda value: re.sub(r'http\S+ *', '', value).strip())
 
     def remove_tweet_marking(self, text: str | list) -> str | list:
-        """
-        Removes tweet markings (e.g., @mentions and #hashtags) from the given text.
+        """Removes tweet markings (e.g., @mentions and #hashtags) from the given text.
 
         Args:
             text (str | list): The text or list of texts to process.
@@ -165,8 +159,7 @@ class PreProcessing:
         return self._process_text(text, lambda value: re.sub(r'(@|#)\S+ *', '', value).strip())
 
     def remove_punctuation(self, text: str | list) -> str | list:
-        """
-        Removes punctuation from the given text.
+        """Removes punctuation from the given text.
 
         Args:
             text (str | list): The text from which punctuation needs to be removed.
@@ -179,8 +172,7 @@ class PreProcessing:
         return text
 
     def remove_repetion(self, text: str | list) -> str | list:
-        """
-        Removes repeated words in the given text.
+        """Removes repeated words in the given text.
 
         Args:
             text (str | list): The input text or list of words.
@@ -192,8 +184,7 @@ class PreProcessing:
         return self._process_text(text, lambda value: re.sub(r'\b(\w+)\s+\1\b', r'\1', value))
 
     def append_stopwords_list(self, stopwords: list) -> None:
-        """
-        Appends additional stopwords to the existing list of stopwords.
+        """Appends additional stopwords to the existing list of stopwords.
 
         Parameters:
         stopwords (list): A list of stopwords to be appended.
@@ -202,8 +193,7 @@ class PreProcessing:
         self.stopwords.extend(stopwords)
 
     def remove_stopwords(self, text: str | list) -> str | list:
-        """
-        Removes stopwords from the given text.
+        """Removes stopwords from the given text.
 
         Args:
             text (str | list): The input text from which stopwords need to be removed.
@@ -215,8 +205,7 @@ class PreProcessing:
         return self._process_text(text, lambda value: re.sub(rf'\b({"|".join(self.stopwords)})\b *', '', value).strip())
 
     def spacy_processing(self, docs: list, n_process: int = -1, lemma: str = False) -> list:
-        """
-        Preprocesses a list of documents using spaCy.
+        """Preprocesses a list of documents using spaCy.
 
         Args:
             docs (list): List of documents to be processed.
@@ -256,8 +245,7 @@ class PreProcessing:
         return pp_docs
 
     def remove_n(self, text: str | list, n: int) -> str | list:
-        """
-        Removes words of length 1 to n followed by the word 'pri' from the given text.
+        """Removes words of length 1 to n followed by the word 'pri' from the given text.
 
         Args:
             text (str | list): The input text or list of texts to process.
@@ -270,8 +258,7 @@ class PreProcessing:
         return self._process_text(text, lambda value: re.sub(rf'\b\w{{1,{n}}}\b ?pri', '', value).strip())
 
     def remove_numbers(self, text: str | list, mode: str = 'replace') -> str | list:
-        """
-        Removes or replaces numbers in the given text.
+        """Removes or replaces numbers in the given text.
 
         Args:
             text (str | list): The input text or list of texts.
@@ -288,8 +275,7 @@ class PreProcessing:
             return self._process_text(text, lambda value: re.sub('[0-9] *', '', value))
 
     def remove_gerund(self, text: str | list) -> str | list:
-        """
-        Removes the gerund form '-ndo' from the given text.
+        """Removes the gerund form '-ndo' from the given text.
 
         Args:
             text (str | list): The input text or list of texts to process.
@@ -301,8 +287,7 @@ class PreProcessing:
         return self._process_text(text, lambda value: re.sub(r'ndo\b', '', value))
 
     def remove_infinitive(self, text: str | list) -> str | list:
-        """
-        Removes the infinitive form of verbs from the given text.
+        """Removes the infinitive form of verbs from the given text.
 
         Args:
             text (str | list): The input text or list of texts to process.
@@ -315,8 +300,7 @@ class PreProcessing:
 
     @staticmethod
     def filter_by_idf(text: list) -> list:
-        """
-        Filters the input text by removing words with IDF (Inverse Document Frequency) values below a certain threshold.
+        """Filters the input text by removing words with IDF (Inverse Document Frequency) values below a certain threshold.
 
         Args:
             text (list): The input text to be filtered.

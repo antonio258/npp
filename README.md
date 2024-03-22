@@ -31,3 +31,6 @@ pp = PreProcessing()
 text = "Your text data here"
 processed_text = pp.lowercase_unidecode(text)
 ```
+
+## License
+This project is licensed under the MIT License - see the LICENSE.md file for details.

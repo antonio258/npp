@@ -15,9 +15,7 @@ This project is a collection of Python scripts for Natural Language Processing (
 This project requires Python and pip installed. Clone the project and install the dependencies:
 
 ```bash
-git clone https://github.com/antonio258/npp.git
-cd npp
-pip install -r requirements.txt
+pip install git+https://github.com/antonio258/npp.git
 ```
 
 ## Usage

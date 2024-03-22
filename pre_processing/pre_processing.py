@@ -1,8 +1,9 @@
 import os
 import re
-from typing import Callable
+from typing import Callable, Union
 
 import numpy as np
+import pandas as pd
 import spacy
 from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm import tqdm
@@ -66,9 +67,9 @@ class PreProcessing:
         self.noentities = noentities
         self.remove_list = remove_list
         self.punctuation = (
-                r'\(|!|"|#|\$|%|&|\'|\(|\)|\*|\+|,|-|\.|\/'
-                r'|:|;|<|=|>|\?|\@|\[|\]|\^|_|`|\{|\}|~|\|'
-                r'|\r\n|\n|\r|\\\)'
+                r'\(|!|"|#|\$|%|&|\'|\(|\)|\*|\+|,|-|\.|\/|'
+                r':|;|<|=|>|\?|\@|\[|\]|\^|_|`|\{|\}|~|\||'
+                r'\r\n|\n|\r|\\\)'
         )
         self.nlp = self._load_spacy_model(language)
         self.stopwords = [unidecode(x).lower() for x in list(self.nlp.Defaults.stop_words)]
@@ -97,11 +98,11 @@ class PreProcessing:
         return spacy.load(model_list[language])
 
     @staticmethod
-    def _process_text(text: str | list, function: Callable) -> str | list:
+    def _process_text(text: str | list | np.ndarray | pd.Series, function: Callable) -> str | list:
         """Process the given text using the provided function.
 
         Args:
-            text (str | list): The text to be processed. It can be either a string or a list of strings.
+            text (Union[str, list, np.ndarray, pd.Series): The text to be processed. It can be either a string or a list of strings.
             function (Callable): The function to be applied to the text.
 
         Returns:
@@ -111,15 +112,15 @@ class PreProcessing:
         """
         if isinstance(text, str):
             return function(text)
-        elif isinstance(text, list):
+        elif isinstance(text, list | np.ndarray | pd.Series):
             return [function(x) for x in text]
         return ''
 
-    def lowercase_unidecode(self, text: str | list) -> str | list:
+    def lowercase_unidecode(self, text: str | list | np.ndarray | pd.Series) -> str | list:
         """Convert the given text to lowercase and remove any diacritical marks (accents).
 
         Args:
-            text (str | list): The text to be processed. It can be either a string or a list of strings.
+            text (str | list | np.ndarray | pd.Series): The text to be processed. It can be either a string or a list of strings.
 
         Returns:
             str | list: The processed text. If the input is a string, the output will be a string. If the input is a list,
@@ -135,11 +136,11 @@ class PreProcessing:
         text = self._process_text(text, unidecode)
         return text
 
-    def remove_urls(self, text: str | list) -> str | list:
+    def remove_urls(self, text: str | list | np.ndarray | pd.Series) -> str | list:
         """Removes URLs from the given text or list of texts.
 
         Args:
-            text (str | list): The text or list of texts from which to remove URLs.
+            text (str | list | np.ndarray | pd.Series): The text or list of texts from which to remove URLs.
 
         Returns:
             str | list: The text or list of texts with URLs removed.
@@ -147,22 +148,33 @@ class PreProcessing:
         """
         return self._process_text(text, lambda value: re.sub(r'http\S+ *', '', value).strip())
 
-    def remove_tweet_marking(self, text: str | list) -> str | list:
+    def remove_tweet_marking(self, text: str | list | np.ndarray | pd.Series) -> str | list:
         """Removes tweet markings (e.g., @mentions and #hashtags) from the given text.
 
         Args:
-            text (str | list): The text or list of texts to process.
+            text (str | list | np.ndarray | pd.Series): The text or list of texts to process.
 
         Returns:
             str | list: The processed text or list of processed texts with tweet markings removed.
         """
         return self._process_text(text, lambda value: re.sub(r'(@|#)\S+ *', '', value).strip())
+    
+    def remove_html_tags(self, text: str | list | np.ndarray | pd.Series) -> str | list:
+        """Removes HTML tags from the given text.
 
-    def remove_punctuation(self, text: str | list) -> str | list:
+        Args:
+            text (str | list | np.ndarray | pd.Series): The text or list of texts to process.
+
+        Returns:
+            str | list: The processed text or list of processed texts with HTML tags removed.
+        """
+        return self._process_text(text, lambda value: re.sub(r'<.*?> *', '', value).strip())
+
+    def remove_punctuation(self, text: str | list | np.ndarray | pd.Series) -> str | list:
         """Removes punctuation from the given text.
 
         Args:
-            text (str | list): The text from which punctuation needs to be removed.
+            text (str | list | np.ndarray | pd.Series): The text from which punctuation needs to be removed.
 
         Returns:
             str | list: The text with punctuation removed.
@@ -171,11 +183,11 @@ class PreProcessing:
         text = self._process_text(text, lambda value: re.sub(' {2,}', ' ', value).strip())
         return text
 
-    def remove_repetion(self, text: str | list) -> str | list:
+    def remove_repetion(self, text: str | list | np.ndarray | pd.Series) -> str | list:
         """Removes repeated words in the given text.
 
         Args:
-            text (str | list): The input text or list of words.
+            text (str | list | np.ndarray | pd.Series): The input text or list of words.
 
         Returns:
             str | list: The processed text with repeated words removed.
@@ -192,11 +204,11 @@ class PreProcessing:
         """
         self.stopwords.extend(stopwords)
 
-    def remove_stopwords(self, text: str | list) -> str | list:
+    def remove_stopwords(self, text: str | list | np.ndarray | pd.Series) -> str | list:
         """Removes stopwords from the given text.
 
         Args:
-            text (str | list): The input text from which stopwords need to be removed.
+            text (str | list | np.ndarray | pd.Series): The input text from which stopwords need to be removed.
 
         Returns:
             str | list: The processed text with stopwords removed.
@@ -204,7 +216,7 @@ class PreProcessing:
         """
         return self._process_text(text, lambda value: re.sub(rf'\b({"|".join(self.stopwords)})\b *', '', value).strip())
 
-    def spacy_processing(self, docs: list, n_process: int = -1, lemma: str = False) -> list:
+    def spacy_processing(self, docs: list | np.ndarray | pd.Series, n_process: int = -1, lemma: str = False) -> list:
         """Preprocesses a list of documents using spaCy.
 
         Args:
@@ -244,11 +256,11 @@ class PreProcessing:
             pp_docs.append(' '.join(pp_doc))
         return pp_docs
 
-    def remove_n(self, text: str | list, n: int) -> str | list:
+    def remove_n(self, text: str | list | np.ndarray | pd.Series, n: int) -> str | list:
         """Removes words of length 1 to n followed by the word 'pri' from the given text.
 
         Args:
-            text (str | list): The input text or list of texts to process.
+            text (str | list | np.ndarray | pd.Series): The input text or list of texts to process.
             n (int): The maximum length of words to remove.
 
         Returns:
@@ -257,11 +269,11 @@ class PreProcessing:
         """
         return self._process_text(text, lambda value: re.sub(rf'\b\w{{1,{n}}}\b ?pri', '', value).strip())
 
-    def remove_numbers(self, text: str | list, mode: str = 'replace') -> str | list:
+    def remove_numbers(self, text: str | list | np.ndarray | pd.Series, mode: str = 'replace') -> str | list:
         """Removes or replaces numbers in the given text.
 
         Args:
-            text (str | list): The input text or list of texts.
+            text (str | list | np.ndarray | pd.Series): The input text or list of texts.
             mode (str, optional): The mode of operation. Defaults to 'replace'.
                 - 'filter': Removes the numbers from the text.
                 - 'replace': Replaces the numbers with an empty string.
@@ -274,11 +286,11 @@ class PreProcessing:
         elif mode == "replace":
             return self._process_text(text, lambda value: re.sub('[0-9] *', '', value))
 
-    def remove_gerund(self, text: str | list) -> str | list:
+    def remove_gerund(self, text: str | list | np.ndarray | pd.Series) -> str | list:
         """Removes the gerund form '-ndo' from the given text.
 
         Args:
-            text (str | list): The input text or list of texts to process.
+            text (str | list | np.ndarray | pd.Series): The input text or list of texts to process.
 
         Returns:
             str | list: The processed text with the gerund form removed.
@@ -286,11 +298,11 @@ class PreProcessing:
         """
         return self._process_text(text, lambda value: re.sub(r'ndo\b', '', value))
 
-    def remove_infinitive(self, text: str | list) -> str | list:
+    def remove_infinitive(self, text: str | list | np.ndarray | pd.Series) -> str | list:
         """Removes the infinitive form of verbs from the given text.
 
         Args:
-            text (str | list): The input text or list of texts to process.
+            text (str | list | np.ndarray | pd.Series): The input text or list of texts to process.
 
         Returns:
             str | list: The processed text with infinitive forms removed.
@@ -299,11 +311,11 @@ class PreProcessing:
         return self._process_text(text, lambda value: re.sub(r'r\b', '', value))
 
     @staticmethod
-    def filter_by_idf(text: list) -> list:
+    def filter_by_idf(text: list | np.ndarray | pd.Series) -> list:
         """Filters the input text by removing words with IDF (Inverse Document Frequency) values below a certain threshold.
 
         Args:
-            text (list): The input text to be filtered.
+            text (list | np.ndarray | pd.Series): The input text to be filtered.
 
         Returns:
             list: The filtered text with words removed based on IDF values.

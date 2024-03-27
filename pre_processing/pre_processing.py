@@ -267,7 +267,7 @@ class PreProcessing:
             str | list: The processed text or list of processed texts.
 
         """
-        return self._process_text(text, lambda value: re.sub(rf'\b\w{{1,{n}}}\b ?pri', '', value).strip())
+        return self._process_text(text, lambda value: re.sub(rf'(\b|^)\w{{1,{n}}}(\b|$) ?', '', value).strip())
 
     def remove_numbers(self, text: str | list | np.ndarray | pd.Series, mode: str = 'replace') -> str | list:
         """Removes or replaces numbers in the given text.
